@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!--预览-->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/viewFinder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </androidx.camera.view.PreviewView>
+
+        <!--对焦-->
+        <com.kotlinx.camerax.FocusImageView
+            android:id="@+id/focusView"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            app:focus_fail_id="@drawable/focus_focus_failed"
+            app:focus_focusing_id="@drawable/focus_focusing"
+            app:focus_success_id="@drawable/focus_focused" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <!--切换-->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSwitch"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:backgroundTint="#00FFFFFF"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="切换"
+                android:textColor="#66CCFF"
+                android:textSize="10sp"
+                app:cornerRadius="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:rippleColor="#FFFFFF"
+                app:strokeColor="#66CCFF"
+                app:strokeWidth="2dp" />
+            <!--录像-->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartVideo"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:backgroundTint="#20FFFFFF"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="录像"
+                android:textColor="#66CCFF"
+                android:textSize="12sp"
+                app:cornerRadius="25dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.2"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.95"
+                app:rippleColor="#FFFFFF"
+                app:strokeColor="#66CCFF"
+                app:strokeWidth="2dp" />
+            <!--拍照-->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/camera_capture_button"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:backgroundTint="#20FFFFFF"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="拍照"
+                android:textColor="#66CCFF"
+                android:textSize="12sp"
+                app:cornerRadius="25dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.8"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.95"
+                app:rippleColor="#FFFFFF"
+                app:strokeColor="#66CCFF"
+                app:strokeWidth="2dp" />
+
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</layout>

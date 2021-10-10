@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#21A9FA</color>
+    <color name="colorPrimaryDark">#52BEFF</color>
+    <color name="colorAccent">#03DAC5</color>
+
+    <!--天蓝色-->
+    <color name="skyBlue">#66CCFF</color>
+</resources>
