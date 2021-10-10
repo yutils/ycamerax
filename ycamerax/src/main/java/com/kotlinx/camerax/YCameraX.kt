@@ -285,7 +285,7 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
 
                 override fun onError(e: ImageCaptureException) {
                     Log.e(TAG, "拍照失败: ${e.message}", e)
-                    activity.runOnUiThread { Toast.makeText(activity, "录像失败: ${e.message}", Toast.LENGTH_SHORT).show() }
+                    activity.runOnUiThread { Toast.makeText(activity, "拍照失败: ${e.message}", Toast.LENGTH_SHORT).show() }
                 }
             })
     }
@@ -328,7 +328,12 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
     @SuppressLint("RestrictedApi")
     fun stopVideo() {
         if (useImageAnalysis) return
-        videoCapture?.stopRecording()//停止录制
+        try {
+            videoCapture?.stopRecording()//停止录制
+        }catch (e:Exception){
+            Log.e(TAG, "录像失败: ${e.message}", e)
+            activity.runOnUiThread { Toast.makeText(activity, "录像失败: ${e.message}", Toast.LENGTH_SHORT).show() }
+        }
     }
 
     /**

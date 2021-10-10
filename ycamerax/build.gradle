@@ -51,3 +51,5 @@ dependencies {
     // 可以使用供应商扩展
     implementation "androidx.camera:camera-extensions:1.0.0-alpha29"
 }
+
+apply from: "${getRootDir().absolutePath}/gradles/publish-maven.gradle"

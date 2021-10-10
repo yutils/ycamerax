@@ -37,7 +37,7 @@ class TakeActivity : AppCompatActivity() {
         //当前相机,后置摄像头
         yCameraX.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         //是否启用图像分析，启用图像分析就不能启用录像，启用录像就不能图像分析
-        yCameraX.useImageAnalysis = true
+        yCameraX.useImageAnalysis = false
         //拍照完成监听
         yCameraX.takeListener = object : TakeListener {
             override fun value(file: File) {
