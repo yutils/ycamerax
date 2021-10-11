@@ -36,6 +36,8 @@ class TakeActivity : AppCompatActivity() {
         yCameraX = YCameraX(this, binding.viewFinder, binding.focusView)
         //当前相机,后置摄像头
         yCameraX.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        //显示旋转方向
+        yCameraX.displayOrientation = 0
         //是否启用图像分析，启用图像分析就不能启用录像，启用录像就不能图像分析
         yCameraX.useImageAnalysis = false
         //拍照完成监听

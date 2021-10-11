@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Environment
 import android.renderscript.*
 import android.util.Log
+import android.view.Surface
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -41,16 +42,18 @@ import java.util.concurrent.TimeUnit
 class TakeActivity : AppCompatActivity() {
     lateinit var yCameraX: YCameraX
     lateinit var binding: ActivityTakeBinding
+
     @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_take)
         //申请权限
         registerPermissions.launch(permissions)
-
         yCameraX = YCameraX(this, binding.viewFinder, binding.focusView)
         //当前相机,后置摄像头
         yCameraX.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        //显示旋转方向
+        yCameraX.displayOrientation=0
         //是否启用图像分析，启用图像分析就不能启用录像，启用录像就不能图像分析
         yCameraX.useImageAnalysis = false
         //拍照完成监听
@@ -65,7 +68,7 @@ class TakeActivity : AppCompatActivity() {
                 Toast.makeText(this@TakeActivity, "录像完成：${file.path}", Toast.LENGTH_SHORT).show()
             }
         }
-        //录像完成监听
+        //图像分析，逐帧回调
         yCameraX.analysisListener = object : AnalysisListener {
             override fun value(bitmap: Bitmap?) {
                 binding.imageView.setImageBitmap(bitmap)
@@ -74,13 +77,14 @@ class TakeActivity : AppCompatActivity() {
 
         //拍照按钮
         binding.cameraCaptureButton.setOnClickListener { yCameraX.takePhoto() }
+
         //录像按钮
-        binding.btnStartVideo.visibility=if ( yCameraX.useImageAnalysis) View.GONE else View.VISIBLE
+        binding.btnStartVideo.visibility = if (yCameraX.useImageAnalysis) View.GONE else View.VISIBLE
         binding.btnStartVideo.setOnClickListener {
             if (binding.btnStartVideo.text == "录像") {
                 binding.btnStartVideo.text = "停止"
                 binding.btnStartVideo.strokeColor = ColorStateList.valueOf(Color.RED)
-                yCameraX.takeVideo()
+                yCameraX.takeVideo()//开始录像
             } else {
                 yCameraX.stopVideo()//停止录制
                 binding.btnStartVideo.text = "录像"
@@ -107,7 +111,7 @@ class TakeActivity : AppCompatActivity() {
                 return@registerForActivityResult
             }
         }
-        //获取所有权限后
+        //获取所有权限后，启动摄像头
         yCameraX.startCamera()
     }
 
@@ -128,7 +132,10 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
     var analysisListener: AnalysisListener? = null //图像分析回调
     var takeListener: TakeListener? = null //拍照回调
     var videoListener: VideoListener? = null //录像回调
+    var displayOrientation = 90//显示旋转方向,硬件方向
+    var analysisInterval = 1//处理间隔,1每一帧，2每两帧
 
+    private var analysisCount = 0L
     private var rotation = 0  //旋转角度
     private var cameraExecutor: ExecutorService? = null
     private var cameraProvider: ProcessCameraProvider? = null//相机信息
@@ -137,7 +144,6 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
     private var imageCapture: ImageCapture? = null//拍照用例
     private var videoCapture: VideoCapture? = null//录像用例
     private var imageAnalysis: ImageAnalysis? = null//图像分析用例
-
 
     /**
      * 启动摄像头
@@ -153,6 +159,7 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
             cameraProvider = cameraProviderFuture.get()
             //预览配置
             preview = Preview.Builder().build().also { it.setSurfaceProvider(viewFinder.surfaceProvider) }
+
             //拍照用例配置
             imageCapture = ImageCapture.Builder()
                 .setTargetAspectRatio(AspectRatio.RATIO_4_3)//设置高宽比
@@ -175,6 +182,7 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
                 cameraProvider?.unbindAll()//先解绑所有用例
                 //imageAnalysis 和 videoCapture 不能同时使用
                 camera = cameraProvider?.bindToLifecycle(activity, cameraSelector, preview, imageCapture, if (useImageAnalysis) imageAnalysis else videoCapture)//绑定用例
+
             } catch (exc: Exception) {
                 Log.e(TAG, "用例绑定失败", exc)
             }
@@ -330,7 +338,7 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
         if (useImageAnalysis) return
         try {
             videoCapture?.stopRecording()//停止录制
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.e(TAG, "录像失败: ${e.message}", e)
             activity.runOnUiThread { Toast.makeText(activity, "录像失败: ${e.message}", Toast.LENGTH_SHORT).show() }
         }
@@ -344,9 +352,11 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
         imageAnalysis?.setAnalyzer(cameraExecutor!!, object : ImageAnalysis.Analyzer {
             //每帧回调
             override fun analyze(image: ImageProxy) {
-                analysisListener?.let {
-                    val bitmap = image.toBitmap()
-                    activity.runOnUiThread { it.value(bitmap) }
+                if (analysisCount++ % analysisInterval == 0L) {
+                    analysisListener?.let {
+                        val bitmap = image.toBitmap()
+                        activity.runOnUiThread { it.value(bitmap) }
+                    }
                 }
                 image.close()
             }
@@ -371,18 +381,44 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
                 uBuffer.get(nv21, ySize + vSize, uSize)
 
                 //yuv转bitmap
-                var bitmap = nv21ToBitmapFast(nv21, this.width, this.height, activity)
-                //bitmap旋转
+                var bitmap: Bitmap? = nv21ToBitmapFast(nv21, this.width, this.height, activity) ?: return null
+
+                //旋转
+                val matrix = Matrix()
+                val ori = getCameraOri(rotation)
+                matrix.setRotate(if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) ori.toFloat() else -ori.toFloat())
+                //前置摄像头y轴翻转
+                if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA)
+                    matrix.postScale(-1f, 1f)
+                // 围绕原地进行旋转
+                val newBM = Bitmap.createBitmap(bitmap!!, 0, 0, width, height, matrix, false)
+                if (newBM == bitmap) return newBM
+                bitmap.recycle()
+                return newBM
+            }
+
+            /**
+             * 旋转
+             */
+            private fun getCameraOri(rotation: Int): Int {
+                var degrees = rotation * 90
                 when (rotation) {
-                    0 -> when (cameraSelector) {
-                        CameraSelector.DEFAULT_BACK_CAMERA -> bitmap = rotateBitmap(bitmap, 90.toFloat())
-                        CameraSelector.DEFAULT_FRONT_CAMERA -> bitmap = rotateBitmap(bitmap, 270.toFloat())
-                    }
-                    1 -> bitmap = rotateBitmap(bitmap, 0.toFloat())
-                    2 -> bitmap = rotateBitmap(bitmap, 270.toFloat())
-                    3 -> bitmap = rotateBitmap(bitmap, 180.toFloat())
+                    0 -> degrees = 0
+                    1 -> degrees = 90
+                    2 -> degrees = 180
+                    3 -> degrees = 270
                 }
-                return bitmap
+                //var displayOrientation = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) 90 else 270
+                var displayOrientation = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) displayOrientation else 360 - displayOrientation
+
+                var result: Int
+                if (CameraSelector.DEFAULT_FRONT_CAMERA == cameraSelector) {
+                    result = (displayOrientation + degrees) % 360
+                    result = (360 - result) % 360
+                } else {
+                    result = (displayOrientation - degrees + 360) % 360
+                }
+                return result
             }
 
             /**
@@ -405,22 +441,6 @@ class YCameraX(val activity: AppCompatActivity, val viewFinder: PreviewView, val
                 toRgb.destroy()
                 rs.destroy()
                 return newBitmap
-            }
-
-            /**
-             * 旋转图片
-             */
-            private fun rotateBitmap(origin: Bitmap?, alpha: Float): Bitmap? {
-                if (origin == null) return null
-                val width = origin.width
-                val height = origin.height
-                val matrix = Matrix()
-                matrix.setRotate(alpha)
-                // 围绕原地进行旋转
-                val newBM = Bitmap.createBitmap(origin, 0, 0, width, height, matrix, false)
-                if (newBM == origin) return newBM
-                origin.recycle()
-                return newBM
             }
         })
     }
