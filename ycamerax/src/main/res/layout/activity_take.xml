@@ -11,8 +11,7 @@
         <androidx.camera.view.PreviewView
             android:id="@+id/viewFinder"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
-        </androidx.camera.view.PreviewView>
+            android:layout_height="match_parent" />
 
         <!--对焦-->
         <com.kotlinx.camerax.FocusImageView
