@@ -3,6 +3,9 @@ buildscript {
     repositories {
         mavenCentral()
         google()
+        maven { url 'https://kotlinx.com/nexus/repository/maven-public' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.0.4'
@@ -14,6 +17,9 @@ allprojects {
     repositories {
         mavenCentral()
         google()
+        maven { url 'https://kotlinx.com/nexus/repository/maven-public' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://jitpack.io' }
     }
 }
 
